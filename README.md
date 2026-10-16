@@ -39,6 +39,8 @@ For SteamOS, see [BUILDING-STEAMOS.md](BUILDING-STEAMOS.md).
 
 For macOS, see the [PrimedGun-Mac fork](https://github.com/gperkins345/PrimedGun-Mac) by [gperkins345](https://github.com/gperkins345).
 
+For Steam Frame, see the [Steam Frame integration branch](https://github.com/Nobbie248/PrimedGun/tree/integration/steam-frame) and its [setup instructions](https://github.com/Nobbie248/PrimedGun/blob/integration/steam-frame/STEAM_FRAME.md), contributed by [simplysanatori](https://github.com/simplysanatori). Steam Frame support is being tested separately from `main`.
+
 ## Features
 
 - Full directional movement.
@@ -107,6 +109,7 @@ To change bindings in Dolphin, open Dolphin Settings, go to Controllers, then ch
 
 - Created by Nobbie.
 - Huge thank you to iChris4, who made Dolphin ReduX for PC and Quest, ported PrimedGun to the Quest, and early on helped fix the visor effects and ported the Metroid Prime override from the old Dolphin Hydra.
+- Thank you to [simplysanatori](https://github.com/simplysanatori) for the native Steam Frame port, SteamVR frame pacing improvements, and setup tools.
 - Thank you to the Metroid Prime modding community for the resources and research that helped make this possible.
 - Development references include the Metroid Prime decompilation project, Metaforce, and PrimeHack. Codex was used to assist with debugging, system integration, and iterative development.
 - Thank you to the Dolphin team.
