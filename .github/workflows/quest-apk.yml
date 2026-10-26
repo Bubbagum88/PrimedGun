@@ -1,0 +1,80 @@
+name: Quest APK
+
+on:
+  push:
+    branches: [quest1]
+    tags: ['v*']
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+
+# A newer push makes an in-progress build of the same branch pointless.
+concurrency:
+  group: quest-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history: the version code is the commit count (build.gradle.kts), and it
+          # has to keep rising for each build to install over the last one.
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Submodules ship their own Gradle wrapper jars (SDL), which the validator rejects.
+          validate-wrappers: false
+
+      - name: Install SDK platform, NDK and CMake
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" "ndk;29.0.14206865" "cmake;3.22.1"
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: quest-apk
+          max-size: 2G
+
+      # releaseNoMinify signs with the debug key. A fixed one keeps every build installable
+      # over the previous one without an uninstall.
+      - name: Use the repository's debug keystore
+        run: |
+          mkdir -p ~/.android
+          cp .github/ci-debug.keystore ~/.android/debug.keystore
+
+      - name: Build
+        working-directory: Source/Android
+        env:
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+        run: ./gradlew --no-daemon app:assembleQuestReleaseNoMinify
+
+      - name: Collect APK
+        run: |
+          mkdir -p dist
+          apk=$(find Source/Android/app/build/outputs/apk -name '*.apk' | head -n 1)
+          cp "$apk" "dist/PrimedGun-quest-${GITHUB_SHA::8}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PrimedGun-quest-apk
+          path: dist/*.apk
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk
