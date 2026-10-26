@@ -133,9 +133,7 @@ android {
             applicationIdSuffix = ".quest"
             versionNameSuffix = "-quest"
             buildConfigField("boolean", "IS_QUEST", "true")
-            // Quest 1 firmware refuses to launch an app that lists a
-            // device name it doesn't know, such as quest3, so this build lists only names it knows.
-            manifestPlaceholders["questSupportedDevices"] = "quest|quest2"
+            manifestPlaceholders["questSupportedDevices"] = "quest2|quest3|quest3s|questpro"
             ndk {
                 abiFilters += listOf("arm64-v8a")
             }
