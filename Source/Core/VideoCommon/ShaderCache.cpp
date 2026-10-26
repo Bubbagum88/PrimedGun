@@ -661,6 +661,11 @@ bool ShaderCache::UseGeometryShaderForEFBCopies() const
   return m_host_config.backend_geometry_shaders && m_host_config.stereo;
 }
 
+bool ShaderCache::UseMultiviewForEFBCopies() const
+{
+  return m_host_config.stereo && m_host_config.vk_multiview && !UseGeometryShaderForEFBCopies();
+}
+
 AbstractPipelineConfig ShaderCache::GetGXPipelineConfig(
     const NativeVertexFormat* vertex_format, const AbstractShader* vertex_shader,
     const AbstractShader* geometry_shader, const AbstractShader* pixel_shader,
@@ -1336,7 +1341,9 @@ ShaderCache::GetEFBCopyToVRAMPipeline(const TextureConversionShaderGen::TCShader
   if (iter != m_efb_copy_to_vram_pipelines.end())
     return iter->second.get();
 
-  auto shader_code = TextureConversionShaderGen::GeneratePixelShader(m_api_type, uid.GetUidData());
+  const bool multiview = UseMultiviewForEFBCopies();
+  auto shader_code =
+      TextureConversionShaderGen::GeneratePixelShader(m_api_type, uid.GetUidData(), multiview);
   auto shader = g_gfx->CreateShaderFromSource(
       ShaderStage::Pixel, shader_code.GetBuffer(), nullptr,
       fmt::format("EFB copy to VRAM pixel shader: {}", *uid.GetUidData()));
@@ -1356,6 +1363,7 @@ ShaderCache::GetEFBCopyToVRAMPipeline(const TextureConversionShaderGen::TCShader
   config.depth_state = RenderState::GetNoDepthTestingDepthState();
   config.blending_state = RenderState::GetNoBlendingBlendState();
   config.framebuffer_state = RenderState::GetRGBA8FramebufferState();
+  config.framebuffer_state.multiview = multiview;
   config.usage = AbstractPipelineUsage::Utility;
   auto iiter = m_efb_copy_to_vram_pipelines.emplace(uid, g_gfx->CreatePipeline(config));
   return iiter.first->second.get();

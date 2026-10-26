@@ -34,7 +34,9 @@ struct UidData
 using TCShaderUid = ShaderUid<UidData>;
 
 ShaderCode GenerateVertexShader(APIType api_type);
-ShaderCode GeneratePixelShader(APIType api_type, const UidData* uid_data);
+// multiview: the copy runs in a VK_KHR_multiview render pass, one view per destination layer.
+// The source layer then comes from gl_ViewIndex, since there is no geometry shader to set it.
+ShaderCode GeneratePixelShader(APIType api_type, const UidData* uid_data, bool multiview = false);
 
 TCShaderUid GetShaderUid(EFBCopyFormat dst_format, bool is_depth_copy, bool is_intensity,
                          bool scale_by_half, float gamma_rcp,

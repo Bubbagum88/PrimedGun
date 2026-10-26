@@ -95,18 +95,20 @@ ShaderCode GenerateVertexShader(APIType api_type)
   return out;
 }
 
-ShaderCode GeneratePixelShader(APIType api_type, const UidData* uid_data)
+ShaderCode GeneratePixelShader(APIType api_type, const UidData* uid_data, bool multiview)
 {
   const bool mono_depth = uid_data->is_depth_copy && g_ActiveConfig.bStereoEFBMonoDepth;
 
   ShaderCode out;
+  if (multiview)
+    out.Write("#extension GL_EXT_multiview : require\n");
   WriteHeader(api_type, out);
 
   out.Write("SAMPLER_BINDING(0) uniform sampler2DArray samp0;\n");
   out.Write("uint4 SampleEFB(float3 uv, float y_offset) {{\n"
             "  float4 tex_sample = texture(samp0, float3(uv.x, clamp(uv.y + (y_offset * "
             "pixel_height), clamp_tb.x, clamp_tb.y), {}));\n",
-            mono_depth ? "0.0" : "uv.z");
+            mono_depth ? "0.0" : (multiview ? "float(gl_ViewIndex)" : "uv.z"));
   if (uid_data->is_depth_copy)
   {
     if (!g_backend_info.bSupportsReversedDepthRange)

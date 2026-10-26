@@ -218,7 +218,11 @@ static VRSettingMap LoadVRSettingsFromINI(std::string_view game_id)
 
   if (Common::CaseInsensitiveEquals(game_id, "GM8E01"))
   {
+#ifndef ANDROID
+    // On Android the app's "Launch in VR" switch writes the global EnableOpenXR before every
+    // boot. Pinning it here would override that switch and keep Metroid in VR regardless.
     values.insert_or_assign("EnableOpenXR", "True");
+#endif
     values.insert_or_assign("UnitsPerMeter", "1.50");
     values.insert_or_assign("LeanBackAngle", "0.0");
     values.insert_or_assign("CameraForward", "0.0");

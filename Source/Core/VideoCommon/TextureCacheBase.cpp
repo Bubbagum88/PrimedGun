@@ -435,12 +435,14 @@ void TextureCacheBase::ScaleTextureCacheEntryTo(RcTcacheEntry& entry, u32 new_wi
                       entry->texture.get(), entry->texture->GetConfig().GetRect());
   entry->texture.swap(new_texture->texture);
   entry->framebuffer.swap(new_texture->framebuffer);
+  entry->multiview_framebuffer.swap(new_texture->multiview_framebuffer);
 
   // At this point new_texture has the old texture in it,
   // we can potentially reuse this, so let's move it back to the pool
   auto config = new_texture->texture->GetConfig();
-  m_texture_pool.emplace(
+  auto pool_iter = m_texture_pool.emplace(
       config, TexPoolEntry(std::move(new_texture->texture), std::move(new_texture->framebuffer)));
+  pool_iter->second.multiview_framebuffer = std::move(new_texture->multiview_framebuffer);
 }
 
 bool TextureCacheBase::CheckReadbackTexture(u32 width, u32 height, AbstractTextureFormat format)
@@ -2809,6 +2811,7 @@ RcTcacheEntry TextureCacheBase::AllocateCacheEntry(const TextureConfig& config)
 
   auto cacheEntry =
       std::make_shared<TCacheEntry>(std::move(alloc->texture), std::move(alloc->framebuffer));
+  cacheEntry->multiview_framebuffer = std::move(alloc->multiview_framebuffer);
   cacheEntry->textures_by_hash_iter = m_textures_by_hash.end();
   cacheEntry->id = m_last_entry_id++;
   return cacheEntry;
@@ -2948,8 +2951,9 @@ void TextureCacheBase::ReleaseToPool(TCacheEntry* entry)
   if (!entry->texture)
     return;
   auto config = entry->texture->GetConfig();
-  m_texture_pool.emplace(config,
-                         TexPoolEntry(std::move(entry->texture), std::move(entry->framebuffer)));
+  auto pool_iter = m_texture_pool.emplace(
+      config, TexPoolEntry(std::move(entry->texture), std::move(entry->framebuffer)));
+  pool_iter->second.multiview_framebuffer = std::move(entry->multiview_framebuffer);
 }
 
 bool TextureCacheBase::CreateUtilityTextures()
@@ -3043,9 +3047,25 @@ void TextureCacheBase::CopyEFBToCacheEntry(RcTcacheEntry& entry, bool is_depth_c
   uniforms.padding = 0;
   g_vertex_manager->UploadUtilityUniforms(&uniforms, sizeof(uniforms));
 
+  // Without a geometry shader to route each eye to its layer, a stereo copy pipeline is built
+  // for a multiview render pass, so it has to draw into a multiview framebuffer.
+  AbstractFramebuffer* framebuffer = entry->framebuffer.get();
+  if (g_shader_cache->UseMultiviewForEFBCopies() && entry->texture->GetLayers() == 2)
+  {
+    if (!entry->multiview_framebuffer)
+      entry->multiview_framebuffer = g_gfx->CreateMultiviewFramebuffer(entry->texture.get());
+    if (!entry->multiview_framebuffer)
+    {
+      WARN_LOG_FMT(VIDEO, "Skipping EFB copy to VRAM: no multiview framebuffer for the copy.");
+      g_gfx->EndUtilityDrawing();
+      return;
+    }
+    framebuffer = entry->multiview_framebuffer.get();
+  }
+
   // Use the copy pipeline to render the VRAM copy.
-  g_gfx->SetAndDiscardFramebuffer(entry->framebuffer.get());
-  g_gfx->SetViewportAndScissor(entry->framebuffer->GetRect());
+  g_gfx->SetAndDiscardFramebuffer(framebuffer);
+  g_gfx->SetViewportAndScissor(framebuffer->GetRect());
   g_gfx->SetPipeline(copy_pipeline);
   g_gfx->SetTexture(0, src_texture);
   g_gfx->SetSamplerState(0, linear_filter ? RenderState::GetLinearSamplerState() :
