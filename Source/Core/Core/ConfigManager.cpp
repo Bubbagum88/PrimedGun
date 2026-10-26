@@ -15,6 +15,10 @@
 
 #include <fmt/format.h>
 
+#ifdef ANDROID
+#include <sys/system_properties.h>
+#endif
+
 #include "AudioCommon/AudioCommon.h"
 
 #include "Common/CommonPaths.h"
@@ -278,6 +282,17 @@ static VRSettingMap LoadVRSettingsFromINI(std::string_view game_id)
   return values;
 }
 
+#ifdef ANDROID
+// Quest 1 ("monterey"): Snapdragon 835 and about 4 GB of RAM, far below the Quest 3 the
+// Metroid defaults below were tuned on.
+static bool IsQuest1()
+{
+  char device[PROP_VALUE_MAX] = {};
+  __system_property_get("ro.product.device", device);
+  return std::string_view{device} == "monterey";
+}
+#endif
+
 static void ApplyPrimedGunMetroidDefaults(Common::IniFile* game_ini)
 {
   auto* core = game_ini->GetOrCreateSection("Core");
@@ -319,6 +334,19 @@ static void ApplyPrimedGunMetroidDefaults(Common::IniFile* game_ini)
 #endif
   video->Set("WaitForShadersBeforeStarting", "True");
   video->Set("SafeTextureCacheColorSamples", "512");
+
+#ifdef ANDROID
+  // These game defaults override GFX.ini, so this is the one place Quest 1 needs adjusting
+  // (a user's own game ini still overrides it). The first Quest 1 launch was killed by the
+  // low-memory killer at about 2.1 GB during the up-front shader compile. Compile on demand
+  // with plain specialized shaders instead, and render at native resolution.
+  if (IsQuest1())
+  {
+    video->Set("WaitForShadersBeforeStarting", "False");
+    video->Set("ShaderCompilationMode", "0");
+    video->Set("InternalResolution", "1");
+  }
+#endif
 
   auto* hacks = game_ini->GetOrCreateSection("Video_Hacks");
   hacks->Set("EFBScaledCopy", "True");
