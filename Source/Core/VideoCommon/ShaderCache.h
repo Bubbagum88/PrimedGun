@@ -94,6 +94,9 @@ public:
   // EFB copy to RAM/VRAM pipelines
   const AbstractPipeline*
   GetEFBCopyToVRAMPipeline(const TextureConversionShaderGen::TCShaderUid& uid);
+  // Stereo EFB copies without a geometry shader (Quest 1): a multiview render pass writes
+  // both destination layers instead.
+  bool UseMultiviewForEFBCopies() const;
   const AbstractPipeline* GetEFBCopyToRAMPipeline(const EFBCopyParams& uid);
 
   // RGBA8 framebuffer copy pipelines

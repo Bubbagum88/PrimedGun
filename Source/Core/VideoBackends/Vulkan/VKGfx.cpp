@@ -118,6 +118,12 @@ VKGfx::CreateFramebuffer(AbstractTexture* color_attachment, AbstractTexture* dep
                                std::move(additional_color_attachments));
 }
 
+std::unique_ptr<AbstractFramebuffer>
+VKGfx::CreateMultiviewFramebuffer(AbstractTexture* color_attachment)
+{
+  return VKFramebuffer::CreateMultiview(static_cast<VKTexture*>(color_attachment), nullptr, {});
+}
+
 void VKGfx::SetPipeline(const AbstractPipeline* pipeline)
 {
   m_current_pipeline = pipeline;

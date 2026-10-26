@@ -82,6 +82,13 @@ public:
   virtual std::unique_ptr<AbstractFramebuffer>
   CreateFramebuffer(AbstractTexture* color_attachment, AbstractTexture* depth_attachment,
                     std::vector<AbstractTexture*> additional_color_attachments = {}) = 0;
+  // A framebuffer over every layer of color_attachment as one VK_KHR_multiview render pass.
+  // Only backends that report bSupportsMultiview implement it.
+  virtual std::unique_ptr<AbstractFramebuffer>
+  CreateMultiviewFramebuffer(AbstractTexture* color_attachment)
+  {
+    return nullptr;
+  }
 
   // Framebuffer operations.
   virtual void SetFramebuffer(AbstractFramebuffer* framebuffer);

@@ -122,6 +122,9 @@ struct TCacheEntry
   // common members
   std::unique_ptr<AbstractTexture> texture;
   std::unique_ptr<AbstractFramebuffer> framebuffer;
+  // Multiview view of a 2-layer texture, made on the first EFB copy that needs it (see
+  // ShaderCache::UseMultiviewForEFBCopies). Travels with the texture through the pool.
+  std::unique_ptr<AbstractFramebuffer> multiview_framebuffer;
   u32 addr = 0;
   u32 size_in_bytes = 0;
   u64 base_hash = 0;
@@ -256,6 +259,7 @@ public:
   {
     std::unique_ptr<AbstractTexture> texture;
     std::unique_ptr<AbstractFramebuffer> framebuffer;
+    std::unique_ptr<AbstractFramebuffer> multiview_framebuffer;
     int frameCount = FRAMECOUNT_INVALID;
 
     TexPoolEntry(std::unique_ptr<AbstractTexture> tex, std::unique_ptr<AbstractFramebuffer> fb);
