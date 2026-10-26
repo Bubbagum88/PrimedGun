@@ -2,6 +2,7 @@
 
 package org.dolphinemu.dolphinemu.features.settings.model
 
+import android.os.Build
 import org.dolphinemu.dolphinemu.BuildConfig
 import org.dolphinemu.dolphinemu.features.input.model.controlleremu.EmulatedController
 
@@ -269,6 +270,11 @@ object QuestVrSettings {
         // overlays draw for it. Without the wait the first frames compile their pipelines inline
         // on the video thread anyway, which is a black screen with nothing to show.
         BooleanSetting.GFX_WAIT_FOR_SHADERS_BEFORE_STARTING.setBoolean(settings, true)
+        // Quest 1 ("monterey", Snapdragon 835): specialized shaders only. The default hybrid
+        // ubershader mode compiles ubershader pipelines on top of the specialized ones.
+        if (Build.DEVICE == "monterey") {
+            IntSetting.GFX_SHADER_COMPILATION_MODE.setInt(settings, 0)
+        }
         BooleanSetting.MAIN_SHOW_INPUT_OVERLAY.setBoolean(settings, false)
         applyRecommendedVrDefaults(settings)
         BooleanSetting.GFX_HACK_IMMEDIATE_XFB.setBoolean(settings, true)
