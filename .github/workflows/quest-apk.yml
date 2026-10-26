@@ -60,7 +60,8 @@ jobs:
         env:
           CMAKE_C_COMPILER_LAUNCHER: ccache
           CMAKE_CXX_COMPILER_LAUNCHER: ccache
-        run: ./gradlew --no-daemon app:assembleQuestReleaseNoMinify
+        # gradlew is stored without the executable bit (mode 100644), so call it through sh.
+        run: sh ./gradlew --no-daemon app:assembleQuestReleaseNoMinify
 
       - name: Collect APK
         run: |
