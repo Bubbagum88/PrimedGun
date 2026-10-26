@@ -450,14 +450,23 @@ struct VideoConfig final
     // (D3D11/D3D12), OpenXR stereo still renders through the stereo GS, and forcing VS expand
     // here desyncs the D3D12 GX root signature, which binds either the VS-expand CBV or the
     // GS CBV; every GS-bearing PSO then fails to build (E_INVALIDARG) and nothing draws.
-    if (stereo_mode == StereoMode::OpenXR && vr_use_vulkan_multiview &&
-        g_backend_info.bSupportsMultiview && iMultisamples == 1)
+    if (UsesVulkanMultiviewStereo())
       return true;
 #endif
     if (!g_backend_info.bSupportsGeometryShaders)
       return true;
     return bPreferVSForLinePointExpansion;
   }
+#ifdef ENABLE_VR
+  // OpenXR stereo rendered through VK_KHR_multiview: both eyes come from one draw via
+  // gl_ViewIndex, with no geometry shader stage. The single source of truth for the
+  // ShaderHostConfig vk_multiview bit, VS point/line expansion and the stereo validity check.
+  bool UsesVulkanMultiviewStereo() const
+  {
+    return stereo_mode == StereoMode::OpenXR && vr_use_vulkan_multiview &&
+           g_backend_info.bSupportsMultiview && iMultisamples == 1;
+  }
+#endif
   bool MultisamplingEnabled() const { return iMultisamples > 1; }
   bool ExclusiveFullscreenEnabled() const
   {

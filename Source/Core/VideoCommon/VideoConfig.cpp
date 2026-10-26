@@ -323,7 +323,13 @@ void VideoConfig::VerifyValidity()
 
   if (stereo_mode != StereoMode::Off)
   {
-    if (!g_backend_info.bSupportsGeometryShaders)
+    // Geometry shaders duplicate each draw into both eyes. The multiview path doesn't need
+    // them, which matters on GPUs whose Vulkan driver has none (Quest 1's Adreno 540).
+    bool stereo_without_gs = false;
+#ifdef ENABLE_VR
+    stereo_without_gs = UsesVulkanMultiviewStereo();
+#endif
+    if (!g_backend_info.bSupportsGeometryShaders && !stereo_without_gs)
     {
       OSD::AddMessage(
           "Stereoscopic 3D isn't supported by your GPU, support for OpenGL 3.2 is required.",
