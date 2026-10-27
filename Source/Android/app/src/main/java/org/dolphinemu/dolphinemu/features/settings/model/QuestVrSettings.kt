@@ -274,6 +274,8 @@ object QuestVrSettings {
         // ubershader mode compiles ubershader pipelines on top of the specialized ones.
         if (Build.DEVICE == "monterey") {
             IntSetting.GFX_SHADER_COMPILATION_MODE.setInt(settings, 0)
+            // Native resolution: 3x is sized for Quest 3 and too heavy for the Adreno 540.
+            IntSetting.GFX_EFB_SCALE.setInt(settings, 1)
         }
         BooleanSetting.MAIN_SHOW_INPUT_OVERLAY.setBoolean(settings, false)
         applyRecommendedVrDefaults(settings)

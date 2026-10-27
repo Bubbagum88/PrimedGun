@@ -44,6 +44,13 @@ void VideoBackend::InitBackendInfo(const WindowSystemInfo& wsi)
     u32 vk_api_version = 0;
     VkInstance temp_instance = VulkanContext::CreateVulkanInstance(WindowSystemType::Headless,
                                                                    false, false, &vk_api_version);
+    // Quest 1's driver can refuse a headless instance. Retry with the real window type, which
+    // is what VideoBackend::Initialize uses successfully a moment later.
+    if (!temp_instance && wsi.type != WindowSystemType::Headless)
+    {
+      temp_instance =
+          VulkanContext::CreateVulkanInstance(wsi.type, false, false, &vk_api_version);
+    }
     if (temp_instance)
     {
       if (LoadVulkanInstanceFunctions(temp_instance))
